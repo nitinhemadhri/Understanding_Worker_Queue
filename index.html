@@ -2,103 +2,119 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Factory Pipeline: Database Setup</title>
+    <title>FACTORY PIPELINE | Live Blueprint</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.6; color: #24292e; max-width: 900px; margin: 0 auto; padding: 2rem; background: #f6f8fa; }
-        h1 { border-bottom: 2px solid #eaecef; padding-bottom: 0.3em; }
-        .module { background: white; border: 1px solid #e1e4e8; border-radius: 6px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        code { background: #f3f3f3; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
-        pre { background: #2d2d2d; color: #f8f8f2; padding: 1rem; border-radius: 6px; overflow-x: auto; position: relative; }
-        .copy-btn { position: absolute; top: 10px; right: 10px; background: #4a4a4a; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
-        .tag { display: inline-block; background: #0366d6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; margin-bottom: 10px; }
+        :root { --main: #00ff41; --bg: #0d0d0d; --card: #1a1a1a; }
+        body { font-family: 'Courier New', monospace; background: var(--bg); color: #ccc; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
+        .header { border-left: 5px solid var(--main); padding-left: 20px; margin-bottom: 30px; }
+        h1 { color: var(--main); letter-spacing: 2px; text-transform: uppercase; margin: 0; }
+        
+        .factory-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
+        .component { background: var(--card); border: 1px solid #333; padding: 20px; border-radius: 4px; }
+        .component h2 { color: var(--main); font-size: 1.2rem; margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
+        pre { background: #000; padding: 15px; border-radius: 4px; overflow-x: auto; color: #88ee88; font-size: 0.85rem; border: 1px inset #222; }
+        .status-tag { display: inline-block; background: #222; color: var(--main); padding: 2px 10px; font-size: 0.7rem; border-radius: 10px; border: 1px solid var(--main); margin-bottom: 10px; }
+        
+        .flow-viz { display: flex; justify-content: space-between; align-items: center; background: #111; padding: 20px; border: 1px dashed #444; margin-bottom: 20px; }
+        .node { text-align: center; width: 22%; }
+        .arrow { font-size: 2rem; color: var(--main); }
     </style>
 </head>
 <body>
 
-    <h1>Factory Pipeline: Infrastructure Setup</h1>
-    <p>This script initializes the <strong>PostgreSQL</strong> environment. It creates the metadata registry (the "Work Orders") and the raw data landing zone (the "Storage Bin").</p>
-
-    <div class="module">
-        <span class="tag">File 1: setup_db.py</span>
-        <h3>Database Initialization Script</h3>
-        <p>Run this first to build the factory floor.</p>
-        <pre><code id="python-code">
-import psycopg2
-from psycopg2 import extras
-
-# CONFIGURATION
-DB_CONFIG = {
-    "host": "localhost",
-    "database": "factory_db",
-    "user": "postgres",
-    "password": "yourpassword"
-}
-
-def setup_infrastructure():
-    conn = psycopg2.connect(**DB_CONFIG)
-    cur = conn.cursor()
-
-    print("--- 🏗️ Building Factory Infrastructure ---")
-
-    # 1. CREATE METADATA TABLE (The Priority Queue Registry)
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS pipeline_metadata (
-            table_id SERIAL PRIMARY KEY,
-            schema_name TEXT NOT NULL,
-            table_name TEXT NOT NULL,
-            poll_interval_sec INTEGER DEFAULT 30,
-            last_id BIGINT DEFAULT 0,
-            last_timestamp TIMESTAMP DEFAULT '1970-01-01',
-            is_active BOOLEAN DEFAULT TRUE,
-            UNIQUE(schema_name, table_name)
-        );
-    """)
-
-    # 2. CREATE RAW DATA LANDING ZONE (The Finished Goods Storage)
-    # We use JSONB for flexibility, or you can map columns specifically.
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS raw_data_storage (
-            uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-            source_table TEXT,
-            data JSONB,
-            ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-
-    # 3. SEED INITIAL TABLES (Example Tables)
-    seed_data = [
-        ('AC', 'O_Production', 10),
-        ('AC', 'I_Material', 30),
-        ('SMARTMIS', 'Mould', 60),
-        ('SmartIIOT', 'Equipment', 15)
-    ]
-    
-    insert_query = """
-        INSERT INTO pipeline_metadata (schema_name, table_name, poll_interval_sec)
-        VALUES (%s, %s, %s)
-        ON CONFLICT DO NOTHING;
-    """
-    cur.executemany(insert_query, seed_data)
-
-    conn.commit()
-    cur.close()
-    conn.close()
-    print("--- ✅ Factory Floor Ready ---")
-
-if __name__ == "__main__":
-    setup_infrastructure()
-        </code></pre>
+<div class="container">
+    <div class="header">
+        <h1>Factory Pipeline Control Center</h1>
+        <p>Parallel ODBC Data Extraction | Current Year: 2026</p>
     </div>
 
-    <div class="module">
-        <h3>Next Steps</h3>
+    <div class="flow-viz">
+        <div class="node"><strong>ALARM CLOCK</strong><br><small>Priority Queue</small></div>
+        <div class="arrow">➜</div>
+        <div class="node"><strong>8 WORKERS</strong><br><small>ThreadPool</small></div>
+        <div class="arrow">➜</div>
+        <div class="node"><strong>CONVEYOR</strong><br><small>Queue Buffer</small></div>
+        <div class="arrow">➜</div>
+        <div class="node"><strong>LOADING DOCK</strong><br><small>Postgres Writer</small></div>
+    </div>
+
+    <div class="factory-grid">
+        <div class="component">
+            <span class="status-tag">COMPONENT: POLLER.PY</span>
+            <h2>The Alarm & The Workers</h2>
+            <p>This script manages the <strong>Priority Queue</strong>. It sleeps until the next table is due, then hands the job to one of the 8 workers.</p>
+            <pre><code>
+import queue
+import time
+import concurrent.futures
+from heapq import heappush, heappop
+
+# The Priority Queue (Alarm Clock)
+task_heap = [] 
+
+def worker_task(table_info):
+    # 1. Connect to MES (ODBC)
+    # 2. Check for iD > last_id
+    # 3. If rows found -> push to data_buffer
+    print(f"Polling {table_info['name']}...")
+    return True
+
+# 8 People in the factory
+with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+    while True:
+        # Get next due table
+        due_time, table = heappop(task_heap)
+        
+        # Wait until it's time
+        now = time.time()
+        if due_time > now:
+            time.sleep(due_time - now)
+            
+        # Send to one of the 8 workers
+        executor.submit(worker_task, table)
+            </code></pre>
+        </div>
+
+        <div class="component">
+            <span class="status-tag">COMPONENT: WRITER.PY</span>
+            <h2>The Conveyor & Storage</h2>
+            <p>Handles the <strong>Queue Buffer</strong>. Even if Postgres slows down, this buffer absorbs the "shocks" to prevent data loss.</p>
+            <pre><code>
+from queue import Queue
+import psycopg2
+
+# The Conveyor Belt (50,000 rows max)
+data_buffer = Queue(maxsize=50000)
+
+def writer_process():
+    while True:
+        # Collect a batch of 500 rows
+        batch = []
+        for _ in range(500):
+            try:
+                row = data_buffer.get(timeout=1)
+                batch.append(row)
+            except: break
+            
+        if batch:
+            # FAST BATCH INSERT
+            execute_values(cur, "INSERT INTO storage...", batch)
+            print(f"Stored {len(batch)} rows")
+            </code></pre>
+        </div>
+    </div>
+
+    <div class="component">
+        <h2>System Summary</h2>
         <ul>
-            <li>Ensure <code>psycopg2-binary</code> is installed: <code>pip install psycopg2-binary</code></li>
-            <li>Update the <code>DB_CONFIG</code> with your Postgres credentials.</li>
-            <li>Run <code>python setup_db.py</code></li>
+            <li><strong>Parallelism:</strong> 8 concurrent ODBC connections.</li>
+            <li><strong>Efficiency:</strong> Zero-CPU-waste sleeping via Priority Queue.</li>
+            <li><strong>Resilience:</strong> Buffer prevents blocking the MES if Postgres lags.</li>
         </ul>
     </div>
+</div>
 
 </body>
 </html>
