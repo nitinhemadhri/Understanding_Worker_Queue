@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Factory Pipeline: Database Setup</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.6; color: #24292e; max-width: 900px; margin: 0 auto; padding: 2rem; background: #f6f8fa; }
+        h1 { border-bottom: 2px solid #eaecef; padding-bottom: 0.3em; }
+        .module { background: white; border: 1px solid #e1e4e8; border-radius: 6px; padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        code { background: #f3f3f3; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace; }
+        pre { background: #2d2d2d; color: #f8f8f2; padding: 1rem; border-radius: 6px; overflow-x: auto; position: relative; }
+        .copy-btn { position: absolute; top: 10px; right: 10px; background: #4a4a4a; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .tag { display: inline-block; background: #0366d6; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.8rem; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>Factory Pipeline: Infrastructure Setup</h1>
+    <p>This script initializes the <strong>PostgreSQL</strong> environment. It creates the metadata registry (the "Work Orders") and the raw data landing zone (the "Storage Bin").</p>
+
+    <div class="module">
+        <span class="tag">File 1: setup_db.py</span>
+        <h3>Database Initialization Script</h3>
+        <p>Run this first to build the factory floor.</p>
+        <pre><code id="python-code">
+import psycopg2
+from psycopg2 import extras
+
+# CONFIGURATION
+DB_CONFIG = {
+    "host": "localhost",
+    "database": "factory_db",
+    "user": "postgres",
+    "password": "yourpassword"
+}
+
+def setup_infrastructure():
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+
+    print("--- 🏗️ Building Factory Infrastructure ---")
+
+    # 1. CREATE METADATA TABLE (The Priority Queue Registry)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS pipeline_metadata (
+            table_id SERIAL PRIMARY KEY,
+            schema_name TEXT NOT NULL,
+            table_name TEXT NOT NULL,
+            poll_interval_sec INTEGER DEFAULT 30,
+            last_id BIGINT DEFAULT 0,
+            last_timestamp TIMESTAMP DEFAULT '1970-01-01',
+            is_active BOOLEAN DEFAULT TRUE,
+            UNIQUE(schema_name, table_name)
+        );
+    """)
+
+    # 2. CREATE RAW DATA LANDING ZONE (The Finished Goods Storage)
+    # We use JSONB for flexibility, or you can map columns specifically.
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS raw_data_storage (
+            uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            source_table TEXT,
+            data JSONB,
+            ingested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+
+    # 3. SEED INITIAL TABLES (Example Tables)
+    seed_data = [
+        ('AC', 'O_Production', 10),
+        ('AC', 'I_Material', 30),
+        ('SMARTMIS', 'Mould', 60),
+        ('SmartIIOT', 'Equipment', 15)
+    ]
+    
+    insert_query = """
+        INSERT INTO pipeline_metadata (schema_name, table_name, poll_interval_sec)
+        VALUES (%s, %s, %s)
+        ON CONFLICT DO NOTHING;
+    """
+    cur.executemany(insert_query, seed_data)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("--- ✅ Factory Floor Ready ---")
+
+if __name__ == "__main__":
+    setup_infrastructure()
+        </code></pre>
+    </div>
+
+    <div class="module">
+        <h3>Next Steps</h3>
+        <ul>
+            <li>Ensure <code>psycopg2-binary</code> is installed: <code>pip install psycopg2-binary</code></li>
+            <li>Update the <code>DB_CONFIG</code> with your Postgres credentials.</li>
+            <li>Run <code>python setup_db.py</code></li>
+        </ul>
+    </div>
+
+</body>
+</html>
